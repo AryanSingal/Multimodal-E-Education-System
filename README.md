@@ -112,7 +112,7 @@ Multimodal-E-Education-System/
 ### Option B: Local Linux / CUDA Workstation
 
 ```bash
-git clone https://github.com/aryansingal823/Multimodal-E-Education-System.git
+git clone https://github.com/AryanSingal/Multimodal-E-Education-System.git
 cd Multimodal-E-Education-System
 
 python3 -m venv .venv
@@ -132,3 +132,7 @@ python3 src/app.py
 - **Privacy:** Instructor portraits, voice samples, and student doubt queries are processed locally on the host runtime without transmitting student data to external commercial LLM APIs.
 
 ---
+
+## License
+
+This project is released under the [MIT License](LICENSE). Third-party checkpoints (SadTalker, GFPGAN, Coqui TTS, Stable Diffusion v1.5, Whisper, TinyLlama) remain subject to their respective upstream licenses.

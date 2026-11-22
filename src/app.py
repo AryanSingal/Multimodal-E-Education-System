@@ -89,7 +89,8 @@ except ImportError:
 # ---------------------------------------------------------------------------
 # Configuration and Directory Paths
 # ---------------------------------------------------------------------------
-BASE_DATA_DIR = os.environ.get("E_EDU_DATA_DIR", "/content")
+_default_base = "/content" if os.path.isdir("/content") and os.access("/content", os.W_OK) else os.path.abspath("runtime_data")
+BASE_DATA_DIR = os.environ.get("E_EDU_DATA_DIR", _default_base)
 KB_PATH = os.path.join(BASE_DATA_DIR, "knowledge_base.json")
 TMP_DIR = os.path.join(BASE_DATA_DIR, "tmp")
 SADTALKER_ROOT = os.environ.get("SADTALKER_ROOT", os.path.join(BASE_DATA_DIR, "SadTalker"))
@@ -97,7 +98,7 @@ LESSON_CONTENT_PATH = os.path.join(BASE_DATA_DIR, "lesson_content.json")
 QUESTIONS_HISTORY_PATH = os.path.join(BASE_DATA_DIR, "questions_history.json")
 SHARED_FILES_DIR = os.path.join(BASE_DATA_DIR, "shared_files")
 FILE_REGISTRY_PATH = os.path.join(SHARED_FILES_DIR, "file_registry.json")
-TINYLLAMA_DIR = os.environ.get("TINYLLAMA_DIR", ".")
+TINYLLAMA_DIR = os.environ.get("TINYLLAMA_DIR", BASE_DATA_DIR if os.path.exists(os.path.join(BASE_DATA_DIR, "tinyllama-1.1b-chat-v1.0.Q4_K_M.gguf")) else ".")
 TINYLLAMA_FILE = "tinyllama-1.1b-chat-v1.0.Q4_K_M.gguf"
 
 STATIC_DIR = "static"
@@ -326,7 +327,6 @@ def init_models():
 # UI Styling
 # ---------------------------------------------------------------------------
 custom_css = """
-<style>
     .gradio-container {
         font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
         background: linear-gradient(135deg, #f0f4f8 0%, #e3f2fd 100%) !important;
@@ -448,7 +448,6 @@ custom_css = """
         margin: 18px auto;
     }
     @keyframes spin { 100% { transform: rotate(360deg); } }
-</style>
 """
 
 
@@ -777,7 +776,7 @@ def generate_talking_video_safe(face_path, wav_path):
         shutil.copy2(face_path, face_input)
         shutil.copy2(wav_path, audio_input)
 
-        cmd = [
+        base_cmd = [
             "python",
             "inference.py",
             "--driven_audio",
@@ -795,8 +794,6 @@ def generate_talking_video_safe(face_path, wav_path):
             "--expression_scale",
             "0.7",
             "--still",
-            "--enhancer",
-            "gfpgan",
         ]
 
         env = os.environ.copy()
@@ -804,13 +801,23 @@ def generate_talking_video_safe(face_path, wav_path):
         env["TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD"] = "1"
 
         result = subprocess.run(
-            cmd,
+            base_cmd + ["--enhancer", "gfpgan"],
             cwd=SADTALKER_ROOT,
             capture_output=True,
             text=True,
             timeout=GENERATION_TIMEOUT,
             env=env,
         )
+        if result.returncode != 0:
+            print("GFPGAN enhancer failed; retrying standard SadTalker rendering...")
+            result = subprocess.run(
+                base_cmd,
+                cwd=SADTALKER_ROOT,
+                capture_output=True,
+                text=True,
+                timeout=GENERATION_TIMEOUT,
+                env=env,
+            )
 
         if result.returncode == 0:
             for root, _, files in os.walk(output_dir):
@@ -981,7 +988,8 @@ def extract_text_from_file(file_path):
 def handle_script_file_upload(file):
     if file is None:
         return ""
-    return extract_text_from_file(file.name)
+    file_path = file if isinstance(file, str) else getattr(file, "name", "")
+    return extract_text_from_file(file_path)
 
 
 def share_file_with_students(uploaded_file, category="notes", description=""):
@@ -990,11 +998,12 @@ def share_file_with_students(uploaded_file, category="notes", description=""):
         if uploaded_file is None:
             return "No file selected."
         timestamp = int(time.time())
-        original_name = os.path.basename(uploaded_file.name)
+        src_path = uploaded_file if isinstance(uploaded_file, str) else uploaded_file.name
+        original_name = os.path.basename(src_path)
         file_ext = os.path.splitext(original_name)[1]
         unique_filename = f"{timestamp}_{uuid.uuid4().hex[:8]}{file_ext}"
         destination_path = os.path.join(SHARED_FILES_DIR, category, unique_filename)
-        shutil.copy2(uploaded_file.name, destination_path)
+        shutil.copy2(src_path, destination_path)
 
         file_size = os.path.getsize(destination_path)
         if file_size < 1024:
