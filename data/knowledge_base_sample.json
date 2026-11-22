@@ -1,0 +1,23 @@
+{
+  "waterfall model": {
+    "question": "Waterfall Model",
+    "answer": "The Waterfall Model is a sequential software development lifecycle model in which requirements analysis, design, implementation, testing, deployment, and maintenance proceed in a fixed linear order.",
+    "video": "/content/tmp/sample_waterfall.mp4",
+    "keywords": [
+      "waterfall",
+      "model",
+      "sdlc",
+      "sequential"
+    ]
+  },
+  "what is software": {
+    "question": "What is Software?",
+    "answer": "Software is a structured set of computer programs, procedures, and documentation designed to perform specific tasks on hardware systems.",
+    "video": "/content/tmp/sample_software.mp4",
+    "keywords": [
+      "software",
+      "programs",
+      "computer"
+    ]
+  }
+}
