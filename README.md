@@ -132,7 +132,3 @@ python3 src/app.py
 - **Privacy:** Instructor portraits, voice samples, and student doubt queries are processed locally on the host runtime without transmitting student data to external commercial LLM APIs.
 
 ---
-
-## License
-
-This project is released under the [MIT License](LICENSE). Third-party checkpoints (SadTalker, GFPGAN, Coqui TTS, Stable Diffusion v1.5, Whisper, TinyLlama) remain subject to their respective upstream licenses.
